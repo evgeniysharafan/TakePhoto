@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">TakePhoto</string>
+
+    <string-array name="photo_choose_dialog">
+        <item>Take Photo</item>
+        <item>Choose from Gallery</item>
+    </string-array>
+    <string name="photo_select_source">Select Source</string>
+    <string name="photo_error">It is impossible to get this file. Please try another one.</string>
+</resources>
