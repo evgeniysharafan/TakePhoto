@@ -2,7 +2,10 @@ package com.evgeniysharafan.takephoto.ui.fragment;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -24,6 +27,16 @@ import butterknife.ButterKnife;
 import butterknife.InjectView;
 import butterknife.OnClick;
 
+import static com.evgeniysharafan.takephoto.util.PermissionUtil.PermissionRequestCode;
+import static com.evgeniysharafan.takephoto.util.PermissionUtil.PermissionRequestCode.STORAGE;
+import static com.evgeniysharafan.takephoto.util.PermissionUtil.STORAGE_PERMISSIONS;
+import static com.evgeniysharafan.takephoto.util.PermissionUtil.getDeniedPermissions;
+import static com.evgeniysharafan.takephoto.util.PermissionUtil.hasAllPermissions;
+import static com.evgeniysharafan.takephoto.util.PermissionUtil.hasPermissionsResult;
+import static com.evgeniysharafan.takephoto.util.PermissionUtil.setPermissionsResult;
+import static com.evgeniysharafan.takephoto.util.PermissionUtil.shouldShowRationale;
+import static com.evgeniysharafan.takephoto.util.PermissionUtil.showSnackbar;
+import static com.evgeniysharafan.takephoto.util.PermissionUtil.showSnackbarWithOpenDetails;
 
 public class TakePhotoFragment extends Fragment implements OnPhotoTakenListener, OnBackPressedListener {
 
@@ -33,6 +46,10 @@ public class TakePhotoFragment extends Fragment implements OnPhotoTakenListener,
     ImageButton addImage;
     @InjectView(R.id.image)
     ImageView image;
+    @InjectView(R.id.snackbar_container)
+    CoordinatorLayout snackbarContainer;
+
+    private Snackbar snackbar;
 
     public static TakePhotoFragment newInstance() {
         return new TakePhotoFragment();
@@ -73,7 +90,58 @@ public class TakePhotoFragment extends Fragment implements OnPhotoTakenListener,
 
     @OnClick(R.id.add_image)
     void addImageClick() {
+        // we need to ask this permission because some galleries (e.g. HTC devices) don't return images without it.
+        if (!hasAllPermissions(STORAGE_PERMISSIONS)) {
+            askForPermissionsIfNeeded(STORAGE, STORAGE_PERMISSIONS);
+            return;
+        }
+
         TakePhoto.getInstance().showSystemChooser(this);
+    }
+
+    private void askForPermissionsIfNeeded(@PermissionRequestCode int requestCode, String... permissions) {
+        if (snackbar != null && snackbar.isShown()) {
+            snackbar.dismiss();
+        }
+
+        if (hasAllPermissions(permissions)) {
+            addImageClick();
+            return;
+        }
+
+        final String[] deniedPermissions = getDeniedPermissions(permissions);
+        if (shouldShowRationale(getActivity(), deniedPermissions)) {
+            snackbar = showSnackbarWithRequestPermissions(requestCode, deniedPermissions);
+        } else {
+            if (hasPermissionsResult(requestCode)) {
+                snackbar = showSnackbarWithOpenDetails(snackbarContainer,
+                        R.string.storage_permissions_rationale_text);
+            } else {
+                askForPermissions(requestCode, deniedPermissions);
+            }
+        }
+    }
+
+    private Snackbar showSnackbarWithRequestPermissions(@PermissionRequestCode final int requestCode,
+                                                        final String... deniedPermissions) {
+        return showSnackbar(snackbarContainer, R.string.storage_permissions_rationale_text,
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        askForPermissions(requestCode, deniedPermissions);
+                    }
+                });
+    }
+
+    private void askForPermissions(@PermissionRequestCode int requestCode, String... deniedPermissions) {
+        requestPermissions(deniedPermissions, requestCode);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(final int requestCode, @NonNull final String[] permissions,
+                                           @NonNull int[] grantResults) {
+        setPermissionsResult(requestCode);
+        askForPermissionsIfNeeded(requestCode, permissions);
     }
 
     @Override

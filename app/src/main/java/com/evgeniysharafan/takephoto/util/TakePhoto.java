@@ -17,6 +17,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 
@@ -327,8 +328,10 @@ public class TakePhoto {
                 outStream = new FileOutputStream(file);
                 byte[] buffer = new byte[8 * 1024];
                 int bytesRead;
-                while ((bytesRead = is.read(buffer)) != -1) {
-                    outStream.write(buffer, 0, bytesRead);
+                if (is != null) {
+                    while ((bytesRead = is.read(buffer)) != -1) {
+                        outStream.write(buffer, 0, bytesRead);
+                    }
                 }
 
                 rotateIfNeeded(file);
@@ -475,6 +478,7 @@ public class TakePhoto {
             return dialog;
         }
 
+        @NonNull
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             return new AlertDialog.Builder(getActivity())

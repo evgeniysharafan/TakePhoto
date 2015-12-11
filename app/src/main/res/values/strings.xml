@@ -7,4 +7,9 @@
     </string-array>
     <string name="photo_select_source">Select Source</string>
     <string name="photo_error">It is impossible to get this file. Please try another one.</string>
+
+    <!--Permissions-->
+    <string name="action_enable">ENABLE</string>
+    <string name="storage_permissions_rationale_text">Please enable Storage permission.</string>
+
 </resources>
