@@ -38,11 +38,13 @@ android {
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
+            manifestPlaceholders = [allowBackup: false, fullBackupContent: false]
         }
         release {
             signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            manifestPlaceholders = [allowBackup: true, fullBackupContent: true]
         }
     }
 
