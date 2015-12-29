@@ -18,8 +18,8 @@ import com.evgeniysharafan.takephoto.R;
 import com.evgeniysharafan.takephoto.util.AppUtils;
 import com.evgeniysharafan.takephoto.util.TakePhoto;
 import com.evgeniysharafan.takephoto.util.TakePhoto.OnPhotoTakenListener;
-import com.evgeniysharafan.takephoto.util.lib.OnBackPressedListener;
-import com.evgeniysharafan.takephoto.util.lib.Toasts;
+import com.evgeniysharafan.utils.OnBackPressedListener;
+import com.evgeniysharafan.utils.Toasts;
 
 import java.io.File;
 

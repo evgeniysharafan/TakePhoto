@@ -22,12 +22,12 @@ import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 
 import com.evgeniysharafan.takephoto.R;
-import com.evgeniysharafan.takephoto.util.lib.ExifHelper;
-import com.evgeniysharafan.takephoto.util.lib.IO;
-import com.evgeniysharafan.takephoto.util.lib.L;
-import com.evgeniysharafan.takephoto.util.lib.PrefUtils;
-import com.evgeniysharafan.takephoto.util.lib.Res;
-import com.evgeniysharafan.takephoto.util.lib.Utils;
+import com.evgeniysharafan.utils.ExifHelper;
+import com.evgeniysharafan.utils.IO;
+import com.evgeniysharafan.utils.L;
+import com.evgeniysharafan.utils.PrefUtils;
+import com.evgeniysharafan.utils.Res;
+import com.evgeniysharafan.utils.Utils;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 

@@ -6,8 +6,8 @@ import android.support.v7.app.AppCompatActivity;
 
 import com.evgeniysharafan.takephoto.R;
 import com.evgeniysharafan.takephoto.ui.fragment.TakePhotoFragment;
-import com.evgeniysharafan.takephoto.util.lib.Fragments;
-import com.evgeniysharafan.takephoto.util.lib.OnBackPressedListener;
+import com.evgeniysharafan.utils.Fragments;
+import com.evgeniysharafan.utils.OnBackPressedListener;
 
 public class TakePhotoActivity extends AppCompatActivity {
 
