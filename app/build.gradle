@@ -60,13 +60,23 @@ android {
         variant.outputs.each { output ->
             File alignedOutputFile = output.outputFile
             if (alignedOutputFile != null && alignedOutputFile.name.endsWith('.apk')) {
-                def df = new SimpleDateFormat("yy.MM.dd")
-                df.setTimeZone(TimeZone.getTimeZone("UTC"))
+                String buildName;
 
-                String buildName = "${appName}_" +
-                        "${variant.mergedFlavor.versionName}_" +
-                        "${df.format(new Date())}_" +
-                        "${variant.buildType.name}"
+                def buildType = variant.buildType.name
+                if ("debug".equals(buildType)) {
+                    // We can't rename debug builds because of an issue of Android Studio.
+                    // Sometimes IDE pushes old build to device instead of the latest one.
+                    // That's why the name of debug builds should be the same.
+                    buildName = "${appName}_" + "${variant.buildType.name}"
+                } else {
+                    def df = new SimpleDateFormat("dd.MM.yy")
+                    df.setTimeZone(TimeZone.getTimeZone("UTC"))
+
+                    buildName = "${appName}_" +
+                            "${variant.mergedFlavor.versionName}_" +
+                            "${df.format(new Date())}_" +
+                            "${variant.buildType.name}"
+                }
 
                 if (variant.buildType.zipAlignEnabled) {
                     output.outputFile = new File(alignedOutputFile.parent, buildName + '.apk')
@@ -79,7 +89,7 @@ android {
 dependencies {
     def supportLibVersion = "23.1.1"
     def gpsVersion = "8.3.0"
-    def utilsVersion = "1.0.2"
+    def utilsVersion = "1.0.3"
 
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile "com.android.support:appcompat-v7:$supportLibVersion"
