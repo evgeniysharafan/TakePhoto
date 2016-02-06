@@ -23,8 +23,8 @@ import com.evgeniysharafan.utils.Toasts;
 
 import java.io.File;
 
+import butterknife.Bind;
 import butterknife.ButterKnife;
-import butterknife.InjectView;
 import butterknife.OnClick;
 
 import static com.evgeniysharafan.takephoto.util.PermissionUtil.PermissionRequestCode;
@@ -42,11 +42,11 @@ public class TakePhotoFragment extends Fragment implements OnPhotoTakenListener,
 
     private static final String STATE_PHOTO = "state_photo";
 
-    @InjectView(R.id.add_image)
+    @Bind(R.id.add_image)
     ImageButton addImage;
-    @InjectView(R.id.image)
+    @Bind(R.id.image)
     ImageView image;
-    @InjectView(R.id.snackbar_container)
+    @Bind(R.id.snackbar_container)
     CoordinatorLayout snackbarContainer;
 
     private Snackbar snackbar;
@@ -59,7 +59,7 @@ public class TakePhotoFragment extends Fragment implements OnPhotoTakenListener,
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_take_photo, container, false);
-        ButterKnife.inject(this, view);
+        ButterKnife.bind(this, view);
         restoreState(savedInstanceState);
 
         return view;
@@ -179,5 +179,11 @@ public class TakePhotoFragment extends Fragment implements OnPhotoTakenListener,
     public boolean onBackPressed() {
         TakePhoto.getInstance().cancelCurrentProcessingIfNeeded();
         return false;
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        ButterKnife.unbind(this);
     }
 }
