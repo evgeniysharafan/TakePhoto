@@ -7,7 +7,7 @@ Taking photos on Android is pain:
 * You need to handle orientation changes even if your app has only one orientation. Sometimes when you press the save button in the camera app, current orientation changes and your current activity instance will be destroyed.
 * You need to handle your saved state. Your current activity instance can be destroyed because the camera app needs a lot of memory.
 
-This project shows how to use the [TakePhoto class](https://github.com/evgeniysharafan/TakePhoto/blob/master/app/src/main/java/com/evgeniysharafan/takephoto/util/TakePhoto.java). It helps to take pictures easy and with all needed checks and handlers.
+This project shows how to use the [TakePhoto](app/src/main/java/com/evgeniysharafan/takephoto/util/TakePhoto.java) class. It helps to take pictures easy and with all needed checks and handlers.
 
 The TakePhoto class contains two choosers: system chooser (showSystemChooser) and custom dialog (showDialogChooser). 
 
