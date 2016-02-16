@@ -177,6 +177,7 @@ public class TakePhoto {
 
         // Gallery
         Intent galleryIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.INTERNAL_CONTENT_URI);
+        galleryIntent.setType("image/*");
 
         Intent chooserIntent = Intent.createChooser(galleryIntent, Res.getString(R.string.photo_select_source));
         chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, cameraIntents.toArray(
@@ -192,6 +193,7 @@ public class TakePhoto {
 
     private void launchGallery(Fragment fragment) {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.INTERNAL_CONTENT_URI);
+        intent.setType("image/*");
         fragment.startActivityForResult(intent, REQUEST_CODE_GALLERY);
     }
 
