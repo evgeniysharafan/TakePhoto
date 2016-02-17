@@ -177,7 +177,7 @@ public class TakePhotoFragment extends Fragment implements OnPhotoTakenListener,
 
     @Override
     public boolean onBackPressed() {
-        TakePhoto.getInstance().cancelCurrentProcessingIfNeeded();
+        TakePhoto.getInstance().cancelCurrentProcessingIfInProgress();
         return false;
     }
 

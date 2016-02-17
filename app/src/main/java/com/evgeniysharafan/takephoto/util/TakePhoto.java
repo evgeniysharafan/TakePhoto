@@ -123,7 +123,7 @@ public class TakePhoto {
         return isInProgress;
     }
 
-    public void cancelCurrentProcessingIfNeeded() {
+    public void cancelCurrentProcessingIfInProgress() {
         if (isInProgress()) {
             isCancelled = true;
             isInProgress = false;
@@ -465,6 +465,18 @@ public class TakePhoto {
             L.e(e);
             return new Date();
         }
+    }
+
+    public void clearCacheFolder() {
+        IO.deleteFilesInFolder(getAlbumDir(), false);
+    }
+
+    public void clearCacheFolder(int remainLatestPhotosCount) {
+        IO.deleteFilesInFolder(getAlbumDir(), remainLatestPhotosCount, false);
+    }
+
+    public void clearCacheFolder(long beforeDateInMillis) {
+        IO.deleteFilesInFolder(getAlbumDir(), beforeDateInMillis, false);
     }
 
     // Custom dialog with chooser
