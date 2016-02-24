@@ -98,7 +98,8 @@ public class TakePhotoFragment extends Fragment implements OnPhotoTakenListener,
             return;
         }
 
-        TakePhoto.getInstance().showSystemChooser(this);
+//        TakePhoto.getInstance().showSystemChooser(this);
+        TakePhoto.getInstance().clearAlbumDirRemainCount(5);
     }
 
     @OnClick(R.id.add_image_cropped)
@@ -186,12 +187,12 @@ public class TakePhotoFragment extends Fragment implements OnPhotoTakenListener,
         addImage.setEnabled(enabled);
     }
 
-    // Use one of these methods to clear the folder with photos
+    // Use one of these methods to clear the dir with photos
     @SuppressWarnings("unused")
-    private void clearCacheFolder() {
-        TakePhoto.getInstance().clearCacheFolder();
-        TakePhoto.getInstance().clearCacheFolderRemainCount(5);
-        TakePhoto.getInstance().clearCacheFolderRemainDays(10);
+    private void clearAlbumDir() {
+        TakePhoto.getInstance().clearAlbumDir();
+        TakePhoto.getInstance().clearAlbumDirRemainCount(5);
+        TakePhoto.getInstance().clearAlbumDirRemainDays(10);
     }
 
     @Override

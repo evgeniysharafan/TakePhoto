@@ -574,16 +574,16 @@ public class TakePhoto {
         }
     }
 
-    public void clearCacheFolder() {
-        IO.deleteFilesInFolder(getAlbumDir(), false);
+    public void clearAlbumDir() {
+        IO.deleteFilesInDir(getAlbumDir(), false);
     }
 
-    public void clearCacheFolderRemainCount(int remainLatestPhotosCount) {
-        IO.deleteFilesInFolderRemainCount(getAlbumDir(), remainLatestPhotosCount, false);
+    public void clearAlbumDirRemainCount(int remainLatestPhotosCount) {
+        IO.deleteFilesInDirRemainCount(getAlbumDir(), remainLatestPhotosCount, false);
     }
 
-    public void clearCacheFolderRemainDays(int remainFilesForDays) {
-        IO.deleteFilesInFolderRemainDays(getAlbumDir(), remainFilesForDays, false);
+    public void clearAlbumDirRemainDays(int remainFilesForDays) {
+        IO.deleteFilesInDirRemainDays(getAlbumDir(), remainFilesForDays, false);
     }
 
     public Date getDate(String imagePath) {
