@@ -98,8 +98,7 @@ public class TakePhotoFragment extends Fragment implements OnPhotoTakenListener,
             return;
         }
 
-//        TakePhoto.getInstance().showSystemChooser(this);
-        TakePhoto.getInstance().clearAlbumDirRemainCount(5);
+        TakePhoto.getInstance().showSystemChooser(this);
     }
 
     @OnClick(R.id.add_image_cropped)
