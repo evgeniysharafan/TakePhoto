@@ -1,7 +1,6 @@
 package com.evgeniysharafan.takephoto.util;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.ContentResolver;
@@ -18,8 +17,10 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 
 import com.evgeniysharafan.takephoto.R;
 import com.evgeniysharafan.utils.ExifHelper;
@@ -29,6 +30,8 @@ import com.evgeniysharafan.utils.PrefUtils;
 import com.evgeniysharafan.utils.Res;
 import com.evgeniysharafan.utils.Utils;
 import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Request;
+import com.squareup.picasso.RequestCreator;
 import com.squareup.picasso.Target;
 
 import java.io.File;
@@ -63,15 +66,35 @@ public class TakePhoto {
     private static final int REQUEST_CODE_CAMERA = 142;
     private static final int REQUEST_CODE_GALLERY = 143;
 
+    private static final String STATE_FILE_PATH = "state_file_path";
+
+    private static final String STATE_HAS_PICASSO_REQUEST = "state_has_picasso_request";
+    private static final String STATE_HAS_SIZE = "state_has_size";
+    private static final String STATE_TARGET_WIDTH = "state_target_width";
+    private static final String STATE_TARGET_HEIGHT = "state_target_height";
+    private static final String STATE_CENTER_CROP = "state_center_crop";
+    private static final String STATE_CENTER_INSIDE = "state_center_inside";
+    private static final String STATE_ONLY_SCALE_DOWN = "state_only_scale_down";
+    private static final String STATE_ROTATION_DEGREES = "state_rotation_degrees";
+    private static final String STATE_HAS_ROTATION_PIVOT = "state_has_rotation_pivot";
+    private static final String STATE_ROTATION_PIVOT_X = "state_rotation_pivot_x";
+    private static final String STATE_ROTATION_PIVOT_Y = "state_rotation_pivot_y";
+
     private static final TakePhoto instance = new TakePhoto();
+
     private File photoFile;
+    private Request picassoRequest;
+
     private OnPhotoTakenListener photoTakenListener;
+
     // we use this file if we get the result between onStop() and onStart(), in this case listener is null.
     private File completedFile;
     // we use this flag if we get an error between onStop() and onStart(), in this case listener is null.
     private boolean hasError;
-    private boolean isInProgress;
-    private boolean isCancelled;
+
+    private boolean isProcessingInProgress;
+    private boolean isProcessingCancelled;
+
     private TargetImpl picassoTarget;
 
     private TakePhoto() {
@@ -81,31 +104,56 @@ public class TakePhoto {
         return instance;
     }
 
-    // Custom dialog with chooser
-    public void showDialogChooser(Fragment fragment) {
-        if (createPhotoFile()) {
-            ChooseDialog dialog = ChooseDialog.newInstance(fragment);
-            dialog.show(fragment.getFragmentManager(), "");
-        }
+    public void showSystemChooser(Activity activity) {
+        showSystemChooser(activity, null);
     }
 
-    public void showSystemChooser(Activity activity) {
-        if (createPhotoFile()) {
+    /**
+     * @param picassoRequest Supported methods: resize, centerCrop, centerInside, onlyScaleDown, rotate (both).
+     *                       Example: TakePhoto.getInstance().showSystemChooser(this, new Request.Builder(42).resize(400, 400).centerCrop().build());
+     */
+    public void showSystemChooser(Activity activity, @Nullable Request picassoRequest) {
+        if (createPhotoFile(picassoRequest)) {
             Intent intent = getSystemChooserIntent(activity.getPackageManager());
             activity.startActivityForResult(intent, REQUEST_CODE_SYSTEM_CHOOSER);
         }
     }
 
     public void showSystemChooser(Fragment fragment) {
-        if (createPhotoFile()) {
+        showSystemChooser(fragment, null);
+    }
+
+    /**
+     * @param picassoRequest Supported methods: resize, centerCrop, centerInside, onlyScaleDown, rotate (both).
+     *                       Example: TakePhoto.getInstance().showSystemChooser(this, new Request.Builder(42).resize(400, 400).centerCrop().build());
+     */
+    public void showSystemChooser(Fragment fragment, @Nullable Request picassoRequest) {
+        if (createPhotoFile(picassoRequest)) {
             Intent intent = getSystemChooserIntent(fragment.getActivity().getPackageManager());
             fragment.startActivityForResult(intent, REQUEST_CODE_SYSTEM_CHOOSER);
         }
     }
 
+    // Custom dialog with chooser
+    public void showDialogChooser(Fragment fragment) {
+        showDialogChooser(fragment, null);
+    }
+
+    /**
+     * @param picassoRequest Supported methods: resize, centerCrop, centerInside, onlyScaleDown, rotate (both).
+     *                       Example: TakePhoto.getInstance().showDialogChooser(this, new Request.Builder(42).resize(400, 400).centerCrop().build());
+     */
+    // Custom dialog with chooser
+    public void showDialogChooser(Fragment fragment, @Nullable Request picassoRequest) {
+        if (createPhotoFile(picassoRequest)) {
+            ChooseDialog dialog = ChooseDialog.newInstance(fragment);
+            dialog.show(fragment.getFragmentManager(), "");
+        }
+    }
+
     public void setPhotoTakenListenerIfNeeded(OnPhotoTakenListener listener) {
-        if (listener != null && !isCancelled) {
-            if (isInProgress()) {
+        if (listener != null && !isProcessingCancelled) {
+            if (isProcessingInProgress()) {
                 photoTakenListener = listener;
             } else if (completedFile != null) {
                 photoTakenListener = listener;
@@ -119,24 +167,29 @@ public class TakePhoto {
         }
     }
 
-    public boolean isInProgress() {
-        return isInProgress;
+    public boolean isProcessingInProgress() {
+        return isProcessingInProgress;
     }
 
     public void cancelCurrentProcessingIfInProgress() {
-        if (isInProgress()) {
-            isCancelled = true;
-            isInProgress = false;
+        if (isProcessingInProgress()) {
+            isProcessingCancelled = true;
+            isProcessingInProgress = false;
         }
     }
 
-    private boolean createPhotoFile() {
+    private boolean createPhotoFile(@Nullable Request request) {
         photoFile = null;
+        picassoRequest = null;
+
         File albumDir = getAlbumDir();
         if (albumDir != null) {
             String imageFileName = JPEG_FILE_PREFIX + PHOTO_DATE_FORMAT.format(new Date());
             photoFile = new File(albumDir, imageFileName + JPEG_FILE_SUFFIX);
-            PrefUtils.put(JPEG_FILE_PREFIX, photoFile.getAbsolutePath());
+            savePhotoFile();
+
+            picassoRequest = request;
+            savePicassoRequestIfExists();
         } else {
             L.e("Storage is unmounted");
         }
@@ -206,14 +259,14 @@ public class TakePhoto {
      * Call isPhotoRequestOk() before, if true disable the Photo button until you get OnPhotoTakenListener callback
      */
     public void onActivityResult(final int requestCode, final int resultCode,
-                                 final Intent data, final OnPhotoTakenListener listener) {
+                                 final Intent data, OnPhotoTakenListener listener) {
         if (!isPhotoRequestOk(requestCode, resultCode)) {
             throw new IllegalStateException("isPhotoRequestOk() should be called before onActivityResult");
         }
 
         photoTakenListener = listener;
-        isInProgress = true;
-        isCancelled = false;
+        isProcessingInProgress = true;
+        isProcessingCancelled = false;
         completedFile = null;
         hasError = false;
 
@@ -242,7 +295,9 @@ public class TakePhoto {
         }
 
         if (photoFile == null) {
-            photoFile = new File(PrefUtils.getString(JPEG_FILE_PREFIX, null));
+            // it means our process has been killed while the camera was running
+            restorePhotoFile();
+            restorePicassoRequestIfExists();
         }
 
         // we need to create a copy because user can press the Photo button again when current process is
@@ -252,7 +307,7 @@ public class TakePhoto {
         // dialog chooser
         switch (requestCode) {
             case REQUEST_CODE_CAMERA:
-                rotateIfNeeded(currentFile);
+                processIfNeeded(currentFile);
                 break;
 
             case REQUEST_CODE_GALLERY:
@@ -262,7 +317,7 @@ public class TakePhoto {
                             String path = getPathFromContentUri(data.getData());
                             if (path != null) {
                                 IO.copyFile(new File(path), currentFile);
-                                rotateIfNeeded(currentFile);
+                                processIfNeeded(currentFile);
                             } else {
                                 fireError();
                             }
@@ -336,7 +391,7 @@ public class TakePhoto {
                     }
                 }
 
-                rotateIfNeeded(file);
+                processIfNeeded(file);
             } finally {
                 try {
                     if (is != null) {
@@ -353,34 +408,68 @@ public class TakePhoto {
         }
     }
 
-    private void rotateIfNeeded(final File file) {
+    private void processIfNeeded(File file) {
         int orientation = getOrientationFromContentUri(Uri.fromFile(file));
-        if ((orientation % 360) != 0) {
-            Utils.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    // we need to have a strong reference to the target
-                    picassoTarget = new TargetImpl(file);
-                    Picasso.with(Utils.getApp()).load(file).into(picassoTarget);
-                }
-            });
+        if (needRotate(file) || hasPicassoRequest()) {
+            process(file);
         } else {
             fireSuccess(file);
         }
+    }
+
+    private boolean needRotate(File file) {
+        int orientation = getOrientationFromContentUri(Uri.fromFile(file));
+        return (orientation % 360) != 0;
+    }
+
+    private void process(final File file) {
+        Utils.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // we need to have a strong reference to the target
+                picassoTarget = new TargetImpl(file);
+                RequestCreator requestCreator = Picasso.with(Utils.getApp()).load(file);
+
+                if (hasPicassoRequest()) {
+                    if (picassoRequest.hasSize()) {
+                        requestCreator.resize(picassoRequest.targetWidth, picassoRequest.targetHeight);
+                    }
+                    if (picassoRequest.centerCrop) {
+                        requestCreator.centerCrop();
+                    }
+                    if (picassoRequest.centerInside) {
+                        requestCreator.centerInside();
+                    }
+                    if (picassoRequest.onlyScaleDown) {
+                        requestCreator.onlyScaleDown();
+                    }
+                    if (picassoRequest.rotationDegrees != 0) {
+                        if (picassoRequest.hasRotationPivot) {
+                            requestCreator.rotate(picassoRequest.rotationDegrees,
+                                    picassoRequest.rotationPivotX, picassoRequest.rotationPivotY);
+                        } else {
+                            requestCreator.rotate(picassoRequest.rotationDegrees);
+                        }
+                    }
+                }
+
+                requestCreator.into(picassoTarget);
+            }
+        });
     }
 
     private void fireSuccess(final File file) {
         Utils.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (photoTakenListener != null && !isCancelled) {
+                if (photoTakenListener != null && !isProcessingCancelled) {
                     photoTakenListener.onPhotoTaken(file);
                 }
 
-                completedFile = (photoTakenListener == null && !isCancelled) ? new File(file.getPath()) : null;
+                completedFile = (photoTakenListener == null && !isProcessingCancelled) ? new File(file.getPath()) : null;
                 setPhotoTakenListenerIfNeeded(null);
                 hasError = false;
-                isInProgress = false;
+                isProcessingInProgress = false;
             }
         });
     }
@@ -394,14 +483,14 @@ public class TakePhoto {
         Utils.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (photoTakenListener != null && !isCancelled) {
+                if (photoTakenListener != null && !isProcessingCancelled) {
                     photoTakenListener.onPhotoError();
                 }
 
-                hasError = photoTakenListener == null && !isCancelled;
+                hasError = photoTakenListener == null && !isProcessingCancelled;
                 setPhotoTakenListenerIfNeeded(null);
                 completedFile = null;
-                isInProgress = false;
+                isProcessingInProgress = false;
             }
         });
     }
@@ -457,6 +546,18 @@ public class TakePhoto {
         }
     }
 
+    public void clearCacheFolder() {
+        IO.deleteFilesInFolder(getAlbumDir(), false);
+    }
+
+    public void clearCacheFolderRemainCount(int remainLatestPhotosCount) {
+        IO.deleteFilesInFolderRemainCount(getAlbumDir(), remainLatestPhotosCount, false);
+    }
+
+    public void clearCacheFolderRemainDays(int remainFilesForDays) {
+        IO.deleteFilesInFolderRemainDays(getAlbumDir(), remainFilesForDays, false);
+    }
+
     public Date getDate(String imagePath) {
         try {
             String imageName = imagePath.substring(imagePath.indexOf(JPEG_FILE_PREFIX) + JPEG_FILE_PREFIX.length());
@@ -467,16 +568,75 @@ public class TakePhoto {
         }
     }
 
-    public void clearCacheFolder() {
-        IO.deleteFilesInFolder(getAlbumDir(), false);
+    private void savePhotoFile() {
+        PrefUtils.put(STATE_FILE_PATH, photoFile.getAbsolutePath());
     }
 
-    public void clearCacheFolder(int remainLatestPhotosCount) {
-        IO.deleteFilesInFolder(getAlbumDir(), remainLatestPhotosCount, false);
+    private void restorePhotoFile() {
+        photoFile = new File(PrefUtils.getString(STATE_FILE_PATH, null));
     }
 
-    public void clearCacheFolder(long beforeDateInMillis) {
-        IO.deleteFilesInFolder(getAlbumDir(), beforeDateInMillis, false);
+    private boolean hasPicassoRequest() {
+        return picassoRequest != null;
+    }
+
+    private void savePicassoRequestIfExists() {
+        PrefUtils.put(STATE_HAS_PICASSO_REQUEST, hasPicassoRequest());
+        if (hasPicassoRequest()) {
+            PrefUtils.put(STATE_HAS_SIZE, picassoRequest.hasSize());
+            PrefUtils.put(STATE_TARGET_WIDTH, picassoRequest.targetWidth);
+            PrefUtils.put(STATE_TARGET_HEIGHT, picassoRequest.targetHeight);
+            PrefUtils.put(STATE_CENTER_CROP, picassoRequest.centerCrop);
+            PrefUtils.put(STATE_CENTER_INSIDE, picassoRequest.centerInside);
+            PrefUtils.put(STATE_ONLY_SCALE_DOWN, picassoRequest.onlyScaleDown);
+            PrefUtils.put(STATE_ROTATION_DEGREES, picassoRequest.rotationDegrees);
+            PrefUtils.put(STATE_HAS_ROTATION_PIVOT, picassoRequest.hasRotationPivot);
+            PrefUtils.put(STATE_ROTATION_PIVOT_X, picassoRequest.rotationPivotX);
+            PrefUtils.put(STATE_ROTATION_PIVOT_Y, picassoRequest.rotationPivotY);
+        }
+    }
+
+    private void restorePicassoRequestIfExists() {
+        boolean hasPicassoRequest = PrefUtils.getBool(STATE_HAS_PICASSO_REQUEST, false);
+        if (hasPicassoRequest) {
+            Request.Builder builder = new Request.Builder(42);
+
+            boolean hasSize = PrefUtils.getBool(STATE_HAS_SIZE, false);
+            if (hasSize) {
+                int targetWidth = PrefUtils.getInt(STATE_TARGET_WIDTH, 0);
+                int targetHeight = PrefUtils.getInt(STATE_TARGET_HEIGHT, 0);
+                builder.resize(targetWidth, targetHeight);
+            }
+
+            boolean centerCrop = PrefUtils.getBool(STATE_CENTER_CROP, false);
+            if (centerCrop) {
+                builder.centerCrop();
+            }
+
+            boolean centerInside = PrefUtils.getBool(STATE_CENTER_INSIDE, false);
+            if (centerInside) {
+                builder.centerInside();
+            }
+
+            boolean onlyScaleDown = PrefUtils.getBool(STATE_ONLY_SCALE_DOWN, false);
+            if (onlyScaleDown) {
+                builder.onlyScaleDown();
+            }
+
+            float rotationDegrees = PrefUtils.getFloat(STATE_ROTATION_DEGREES, 0);
+            if (rotationDegrees != 0) {
+                boolean hasRotationPivot = PrefUtils.getBool(STATE_HAS_ROTATION_PIVOT, false);
+                if (hasRotationPivot) {
+                    float rotationPivotX = PrefUtils.getFloat(STATE_ROTATION_PIVOT_X, 0);
+                    float rotationPivotY = PrefUtils.getFloat(STATE_ROTATION_PIVOT_Y, 0);
+                    builder.rotate(rotationDegrees, rotationPivotX, rotationPivotY);
+                } else {
+                    builder.rotate(rotationDegrees);
+                }
+            }
+
+            picassoRequest = builder.build();
+        }
     }
 
     // Custom dialog with chooser

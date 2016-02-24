@@ -28,15 +28,17 @@ import java.util.List;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static com.evgeniysharafan.takephoto.util.PermissionUtil.PermissionRequestCode.START;
 import static com.evgeniysharafan.takephoto.util.PermissionUtil.PermissionRequestCode.STORAGE;
+import static com.evgeniysharafan.takephoto.util.PermissionUtil.PermissionRequestCode.STORAGE_CROPPED;
 
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 public class PermissionUtil {
 
-    @IntDef({START, STORAGE})
+    @IntDef({START, STORAGE, STORAGE_CROPPED})
     @Retention(RetentionPolicy.SOURCE)
     public @interface PermissionRequestCode {
         int START = 1;
         int STORAGE = 2;
+        int STORAGE_CROPPED = 3;
     }
 
     public static final String[] START_PERMISSIONS;

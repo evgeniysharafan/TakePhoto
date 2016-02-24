@@ -20,6 +20,7 @@ import com.evgeniysharafan.takephoto.util.TakePhoto;
 import com.evgeniysharafan.takephoto.util.TakePhoto.OnPhotoTakenListener;
 import com.evgeniysharafan.utils.OnBackPressedListener;
 import com.evgeniysharafan.utils.Toasts;
+import com.squareup.picasso.Request;
 
 import java.io.File;
 
@@ -29,6 +30,7 @@ import butterknife.OnClick;
 
 import static com.evgeniysharafan.takephoto.util.PermissionUtil.PermissionRequestCode;
 import static com.evgeniysharafan.takephoto.util.PermissionUtil.PermissionRequestCode.STORAGE;
+import static com.evgeniysharafan.takephoto.util.PermissionUtil.PermissionRequestCode.STORAGE_CROPPED;
 import static com.evgeniysharafan.takephoto.util.PermissionUtil.STORAGE_PERMISSIONS;
 import static com.evgeniysharafan.takephoto.util.PermissionUtil.getDeniedPermissions;
 import static com.evgeniysharafan.takephoto.util.PermissionUtil.hasAllPermissions;
@@ -69,7 +71,7 @@ public class TakePhotoFragment extends Fragment implements OnPhotoTakenListener,
     public void onStart() {
         super.onStart();
         TakePhoto.getInstance().setPhotoTakenListenerIfNeeded(this);
-        setPhotoButtonEnabled(!TakePhoto.getInstance().isInProgress());
+        setPhotoButtonEnabled(!TakePhoto.getInstance().isProcessingInProgress());
     }
 
     @Override
@@ -99,13 +101,28 @@ public class TakePhotoFragment extends Fragment implements OnPhotoTakenListener,
         TakePhoto.getInstance().showSystemChooser(this);
     }
 
+    @OnClick(R.id.add_image_cropped)
+    void addCroppedImageClick() {
+        // we need to ask this permission because some galleries (e.g. HTC devices) don't return images without it.
+        if (!hasAllPermissions(STORAGE_PERMISSIONS)) {
+            askForPermissionsIfNeeded(STORAGE_CROPPED, STORAGE_PERMISSIONS);
+            return;
+        }
+
+        TakePhoto.getInstance().showSystemChooser(this, new Request.Builder(42).resize(400, 400).centerCrop().build());
+    }
+
     private void askForPermissionsIfNeeded(@PermissionRequestCode int requestCode, String... permissions) {
         if (snackbar != null && snackbar.isShown()) {
             snackbar.dismiss();
         }
 
         if (hasAllPermissions(permissions)) {
-            addImageClick();
+            if (requestCode == STORAGE) {
+                addImageClick();
+            } else if (requestCode == STORAGE_CROPPED) {
+                addCroppedImageClick();
+            }
             return;
         }
 
@@ -167,6 +184,14 @@ public class TakePhotoFragment extends Fragment implements OnPhotoTakenListener,
 
     private void setPhotoButtonEnabled(boolean enabled) {
         addImage.setEnabled(enabled);
+    }
+
+    // Use one of these methods to clear the folder with photos
+    @SuppressWarnings("unused")
+    private void clearCacheFolder() {
+        TakePhoto.getInstance().clearCacheFolder();
+        TakePhoto.getInstance().clearCacheFolderRemainCount(5);
+        TakePhoto.getInstance().clearCacheFolderRemainDays(10);
     }
 
     @Override

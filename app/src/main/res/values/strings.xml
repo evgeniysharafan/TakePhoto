@@ -6,7 +6,7 @@
         <item>Choose from Gallery</item>
     </string-array>
     <string name="photo_select_source">Select Source</string>
-    <string name="photo_error">It is impossible to get this file. Please try another one.</string>
+    <string name="photo_error">Some error has occurred. Please try again.</string>
 
     <!--Permissions-->
     <string name="action_enable">ENABLE</string>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -14,18 +15,35 @@
             android:layout_height="wrap_content"
             android:fillViewport="true">
 
-            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <ImageButton
-                    android:id="@+id/add_image"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:src="@drawable/ic_action_photo_camera"
-                    tools:ignore="ContentDescription" />
+                    android:orientation="horizontal">
+
+                    <ImageButton
+                        android:id="@+id/add_image"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0.5"
+                        android:src="@drawable/ic_action_photo_camera"
+                        tools:ignore="ContentDescription" />
+
+                    <Button
+                        android:id="@+id/add_image_cropped"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0.5"
+                        android:drawableLeft="@drawable/ic_action_photo_camera"
+                        android:drawableStart="@drawable/ic_action_photo_camera"
+                        android:text="Cropped image"
+                        android:textAllCaps="true"
+                        tools:ignore="ContentDescription" />
+                </LinearLayout>
 
                 <ImageView
                     android:id="@+id/image"
