@@ -151,6 +151,34 @@ public class TakePhoto {
         }
     }
 
+    public void showCamera(Fragment fragment) {
+        showCamera(fragment, null);
+    }
+
+    /**
+     * @param picassoRequest Supported methods: resize, centerCrop, centerInside, onlyScaleDown, rotate (both).
+     *                       Example: TakePhoto.getInstance().showCamera(this, new Request.Builder(42).resize(400, 400).centerCrop().build());
+     */
+    public void showCamera(Fragment fragment, @Nullable Request picassoRequest) {
+        if (createPhotoFile(picassoRequest)) {
+            takePhoto(fragment);
+        }
+    }
+
+    public void showGallery(Fragment fragment) {
+        showGallery(fragment, null);
+    }
+
+    /**
+     * @param picassoRequest Supported methods: resize, centerCrop, centerInside, onlyScaleDown, rotate (both).
+     *                       Example: TakePhoto.getInstance().showGallery(this, new Request.Builder(42).resize(400, 400).centerCrop().build());
+     */
+    public void showGallery(Fragment fragment, @Nullable Request picassoRequest) {
+        if (createPhotoFile(picassoRequest)) {
+            launchGallery(fragment);
+        }
+    }
+
     public void setPhotoTakenListenerIfNeeded(OnPhotoTakenListener listener) {
         if (listener != null && !isProcessingCancelled) {
             if (isProcessingInProgress()) {
