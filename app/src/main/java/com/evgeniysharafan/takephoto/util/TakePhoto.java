@@ -58,6 +58,8 @@ public class TakePhoto {
         void onPhotoError();
     }
 
+    public static final String DO_NOT_PROCESS_KEY = "do_not_process_key";
+
     private static final String JPEG_FILE_PREFIX = "IMG_";
     private static final String JPEG_FILE_SUFFIX = ".jpg";
     private static final SimpleDateFormat PHOTO_DATE_FORMAT = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US);
@@ -110,7 +112,10 @@ public class TakePhoto {
 
     /**
      * @param picassoRequest Supported methods: resize, centerCrop, centerInside, onlyScaleDown, rotate (both).
-     *                       Example: TakePhoto.getInstance().showSystemChooser(this, new Request.Builder(42).resize(400, 400).centerCrop().build());
+     *                       Example: TakePhoto.getInstance().showSystemChooser(this, new Request.Builder(42)
+     *                       .resize(400, 400).centerCrop().build());
+     *                       <p>If you don't want to process a photo and get it as is with wrong orientation on Samsung devices,
+     *                       add stableKey(TakePhoto.DO_NOT_PROCESS_KEY) to your Picasso request.</p>
      */
     public void showSystemChooser(Activity activity, @Nullable Request picassoRequest) {
         if (createPhotoFile(picassoRequest)) {
@@ -125,7 +130,10 @@ public class TakePhoto {
 
     /**
      * @param picassoRequest Supported methods: resize, centerCrop, centerInside, onlyScaleDown, rotate (both).
-     *                       Example: TakePhoto.getInstance().showSystemChooser(this, new Request.Builder(42).resize(400, 400).centerCrop().build());
+     *                       Example: TakePhoto.getInstance().showSystemChooser(this, new Request.Builder(42)
+     *                       .resize(400, 400).centerCrop().build());
+     *                       <p>If you don't want to process a photo and get it as is with wrong orientation on Samsung devices,
+     *                       add stableKey(TakePhoto.DO_NOT_PROCESS_KEY) to your Picasso request.</p>
      */
     public void showSystemChooser(Fragment fragment, @Nullable Request picassoRequest) {
         if (createPhotoFile(picassoRequest)) {
@@ -141,7 +149,10 @@ public class TakePhoto {
 
     /**
      * @param picassoRequest Supported methods: resize, centerCrop, centerInside, onlyScaleDown, rotate (both).
-     *                       Example: TakePhoto.getInstance().showDialogChooser(this, new Request.Builder(42).resize(400, 400).centerCrop().build());
+     *                       Example: TakePhoto.getInstance().showDialogChooser(this, new Request.Builder(42)
+     *                       .resize(400, 400).centerCrop().build());
+     *                       <p>If you don't want to process a photo and get it as is with wrong orientation on Samsung devices,
+     *                       add stableKey(TakePhoto.DO_NOT_PROCESS_KEY) to your Picasso request.</p>
      */
     // Custom dialog with chooser
     public void showDialogChooser(Fragment fragment, @Nullable Request picassoRequest) {
@@ -157,7 +168,10 @@ public class TakePhoto {
 
     /**
      * @param picassoRequest Supported methods: resize, centerCrop, centerInside, onlyScaleDown, rotate (both).
-     *                       Example: TakePhoto.getInstance().showCamera(this, new Request.Builder(42).resize(400, 400).centerCrop().build());
+     *                       Example: TakePhoto.getInstance().showCamera(this, new Request.Builder(42)
+     *                       .resize(400, 400).centerCrop().build());
+     *                       <p>If you don't want to process a photo and get it as is with wrong orientation on Samsung devices,
+     *                       add stableKey(TakePhoto.DO_NOT_PROCESS_KEY) to your Picasso request.</p>
      */
     public void showCamera(Fragment fragment, @Nullable Request picassoRequest) {
         if (createPhotoFile(picassoRequest)) {
@@ -171,7 +185,10 @@ public class TakePhoto {
 
     /**
      * @param picassoRequest Supported methods: resize, centerCrop, centerInside, onlyScaleDown, rotate (both).
-     *                       Example: TakePhoto.getInstance().showGallery(this, new Request.Builder(42).resize(400, 400).centerCrop().build());
+     *                       Example: TakePhoto.getInstance().showGallery(this, new Request.Builder(42)
+     *                       .resize(400, 400).centerCrop().build());
+     *                       <p>If you don't want to process a photo and get it as is with wrong orientation on Samsung devices,
+     *                       add stableKey(TakePhoto.DO_NOT_PROCESS_KEY) to your Picasso request.</p>
      */
     public void showGallery(Fragment fragment, @Nullable Request picassoRequest) {
         if (createPhotoFile(picassoRequest)) {
@@ -437,12 +454,15 @@ public class TakePhoto {
     }
 
     private void processIfNeeded(File file) {
-        int orientation = getOrientationFromContentUri(Uri.fromFile(file));
-        if (needRotate(file) || hasPicassoRequest()) {
+        if (!hasDoNotProcessKey() && (hasPicassoRequest() || needRotate(file))) {
             process(file);
         } else {
             fireSuccess(file);
         }
+    }
+
+    private boolean hasDoNotProcessKey() {
+        return hasPicassoRequest() && DO_NOT_PROCESS_KEY.equals(picassoRequest.stableKey);
     }
 
     private boolean needRotate(File file) {

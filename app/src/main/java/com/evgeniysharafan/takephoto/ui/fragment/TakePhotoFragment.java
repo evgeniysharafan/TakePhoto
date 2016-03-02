@@ -110,6 +110,10 @@ public class TakePhotoFragment extends Fragment implements OnPhotoTakenListener,
         }
 
         TakePhoto.getInstance().showSystemChooser(this, new Request.Builder(42).resize(400, 400).centerCrop().build());
+
+//      If you don't want to process a photo and get it as is with wrong orientation on Samsung devices,
+//      add stableKey(TakePhoto.DO_NOT_PROCESS_KEY) to your Picasso request.
+//      TakePhoto.getInstance().showSystemChooser(this, new Request.Builder(42).stableKey(TakePhoto.DO_NOT_PROCESS_KEY).build());
     }
 
     private void askForPermissionsIfNeeded(@PermissionRequestCode int requestCode, String... permissions) {
